@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pymupdf
+minio
+python-dotenv
+pydantic
+google-genai
+sentence-transformers
+qdrant-client
+python-multipart

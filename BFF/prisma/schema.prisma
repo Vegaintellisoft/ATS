@@ -1,0 +1,438 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ────────────────────────────────────────────────────
+
+enum DocumentStatus {
+  UPLOADED
+  PROCESSING
+  PARSED
+  FAILED
+}
+
+enum CandidateStatus {
+  NEW
+  SCREENING
+  SHORTLISTED
+  INTERVIEW
+  SELECTED
+  REJECTED
+  HIRED
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  ON_HOLD
+}
+
+enum RequirementPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum RequirementStatus {
+  OPEN
+  ON_HOLD
+  CLOSED
+  CANCELLED
+}
+
+enum ApplicationStatus {
+  NEW
+  SCREENING
+  SHORTLISTED
+  INTERVIEW
+  SELECTED
+  REJECTED
+  HIRED
+}
+
+// ── Organization ─────────────────────────────────────────────
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+
+  users         User[]
+  teams         Team[]
+  roles         Role[]
+  candidates    CandidateProfile[]
+  accounts      Account[]
+  requirements  Requirement[]
+  applications  Application[]
+  activityLogs  ActivityLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── Roles & Permissions ──────────────────────────────────────
+
+model Role {
+  id             String        @id @default(uuid())
+  name           String
+  description    String?
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  users          User[]
+  permissions    RolePermission[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@unique([name, organizationId]) // Ensure role names are unique per org (or globally if orgId is null)
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  description String?
+
+  roles       RolePermission[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+// ── Team ─────────────────────────────────────────────────────
+
+model Team {
+  id             String       @id @default(uuid())
+  name           String
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  users          User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── User ─────────────────────────────────────────────────────
+
+model User {
+  id           String     @id @default(uuid())
+  name         String?
+  email        String     @unique
+  password     String
+  phone        String?
+  employeeCode String?    @unique
+  contactNumber String?
+  department   String?
+  status       UserStatus @default(ACTIVE)
+
+  /// If true, this user has no reporting requirement (e.g. CEO/MD).
+  /// Data-driven — the system does NOT hard-code CEO/MD logic.
+  exception    Boolean    @default(false)
+  
+  roleId   String
+  role     Role   @relation(fields: [roleId], references: [id])
+
+  /// Null for platform-level ADMIN (no org)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  /// Null when user has not been assigned to a specific team
+  teamId String?
+  team   Team?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  /// Self-referencing reporting hierarchy
+  reportingPersonId String?
+  reportingPerson   User?   @relation("ReportingHierarchy", fields: [reportingPersonId], references: [id], onDelete: SetNull)
+  subordinates      User[]  @relation("ReportingHierarchy")
+
+  /// Candidates this user manages (Team Manager)
+  managedCandidates CandidateProfile[] @relation("AssignedManager")
+
+  /// Candidates this user originally created/uploaded
+  createdCandidates  CandidateProfile[] @relation("CreatedBy")
+
+  /// Accounts where this user is the Key Account Person
+  keyAccounts       Account[]  @relation("KeyAccountPerson")
+
+  /// Accounts created by this user
+  createdAccounts   Account[]  @relation("AccountCreatedBy")
+
+  /// Requirements assigned to this user as manager
+  managedRequirements  Requirement[] @relation("RequirementManager")
+
+  /// Requirements assigned to this user as recruiter
+  assignedRequirements Requirement[] @relation("RequirementRecruiter")
+
+  /// Requirements created by this user
+  createdRequirements  Requirement[] @relation("RequirementCreatedBy")
+
+  /// History of changes made by this user to requirements
+  requirementHistory   RequirementHistory[]
+
+  /// Applications assigned to this user as recruiter
+  assignedApplications Application[] @relation("ApplicationRecruiter")
+
+  /// Applications created by this user
+  createdApplications  Application[] @relation("ApplicationCreatedBy")
+
+  /// Pipeline history changes made by this user
+  pipelineHistory      PipelineHistory[]
+
+  /// Activity logs for actions performed by this user
+  activityLogs         ActivityLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── ResumeDocument ───────────────────────────────────────────
+
+model ResumeDocument {
+  id           String         @id @default(uuid())
+
+  bucket       String
+  objectKey    String         @unique
+
+  originalName String
+  mimeType     String
+  fileSize     BigInt
+
+  status       DocumentStatus @default(UPLOADED)
+
+  profile      CandidateProfile?
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+// ── CandidateProfile ─────────────────────────────────────────
+
+model CandidateProfile {
+  id         String @id @default(uuid())
+  documentId String @unique
+
+  profile    Json
+  rawText    String?
+  version    Int @default(1)
+
+  /// Deterministically calculated from the experience[] array.
+  /// Stored here for fast recruiter filters (e.g. ≥5 years) without
+  /// needing to parse the JSON profile on every query.
+  totalExperienceYears Float?
+
+  /// Candidate workflow status
+  status     CandidateStatus @default(NEW)
+
+  /// Organization that owns this candidate record.
+  /// Null only for candidates uploaded before multi-tenancy was introduced.
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  /// The Team Manager currently responsible for this candidate.
+  assignedManagerId String?
+  assignedManager   User?   @relation("AssignedManager", fields: [assignedManagerId], references: [id], onDelete: SetNull)
+
+  /// The user who originally uploaded and processed this candidate.
+  createdById String?
+  createdBy   User?   @relation("CreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  document ResumeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  /// Applications for this candidate
+  applications Application[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── Account (Client Company) ─────────────────────────────────
+
+model Account {
+  id            String        @id @default(uuid())
+  displayName   String
+  source        String?       /// How the account was acquired (e.g. "Referral", "Cold Call")
+
+  /// Internal employee managing the client relationship
+  keyAccountPersonId String?
+  keyAccountPerson   User?     @relation("KeyAccountPerson", fields: [keyAccountPersonId], references: [id], onDelete: SetNull)
+
+  /// Client-side contact info (NOT an internal user)
+  contactPerson  String?
+  contactEmail   String?
+  contactNumber  String?
+  address        String?
+
+  status         AccountStatus @default(ACTIVE)
+  remarks        String?
+
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  /// The user who created this account record
+  createdById    String?
+  createdBy      User?         @relation("AccountCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  requirements   Requirement[]
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+// ── Requirement (Hiring Need) ────────────────────────────────
+
+model Requirement {
+  id               String              @id @default(uuid())
+  requirementCode  String              @unique   /// Auto-generated (e.g. REQ-001)
+  
+  accountId        String
+  account          Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  title            String              /// e.g. "React Developer"
+  jobDescription   String              /// Full JD text
+  requiredSkills   String[]            /// e.g. ["React", "TypeScript"]
+  preferredSkills  String[]            /// e.g. ["GraphQL", "AWS"]
+
+  minExperience    Float?
+  maxExperience    Float?
+  location         String?
+  numberOfOpenings Int                 @default(1)
+
+  priority         RequirementPriority @default(MEDIUM)
+  status           RequirementStatus   @default(OPEN)
+
+  /// Internal user responsible for this requirement
+  assignedManagerId   String?
+  assignedManager     User?            @relation("RequirementManager", fields: [assignedManagerId], references: [id], onDelete: SetNull)
+
+  assignedRecruiterId String?
+  assignedRecruiter   User?            @relation("RequirementRecruiter", fields: [assignedRecruiterId], references: [id], onDelete: SetNull)
+
+  openDate         DateTime            @default(now())
+  targetDate       DateTime?
+  closedDate       DateTime?
+  remarks          String?
+
+  organizationId   String
+  organization     Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdById      String?
+  createdBy        User?               @relation("RequirementCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  history          RequirementHistory[]
+  applications     Application[]
+}
+
+// ── Requirement History ──────────────────────────────────────
+
+model RequirementHistory {
+  id              String       @id @default(uuid())
+  requirementId   String
+  requirement     Requirement  @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  
+  changedById     String?
+  changedBy       User?        @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  changeType      String       /// e.g. "CREATE", "FIELD_UPDATE", "STATUS_CHANGE", "ASSIGNMENT_CHANGE", "REOPENED", "CLOSED", "CANCELLED"
+  field           String?      /// which field changed (if applicable)
+  previousValue   String?
+  newValue        String?
+  remarks         String?
+
+  changedAt       DateTime     @default(now())
+}
+
+// ── Application (Candidate ↔ Requirement junction) ───────────
+
+model Application {
+  id              String            @id @default(uuid())
+  applicationCode String            @unique  /// Auto-generated (e.g. APP-001)
+
+  candidateId     String
+  candidate       CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  requirementId   String
+  requirement     Requirement       @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  status          ApplicationStatus @default(NEW)
+  matchScore      Float?            /// AI match score snapshot at time of creation
+
+  assignedRecruiterId String?
+  assignedRecruiter   User?         @relation("ApplicationRecruiter", fields: [assignedRecruiterId], references: [id], onDelete: SetNull)
+
+  remarks         String?
+
+  organizationId  String
+  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdById     String?
+  createdBy       User?             @relation("ApplicationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  pipelineHistory PipelineHistory[]
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([candidateId, requirementId])
+}
+
+// ── Pipeline History ─────────────────────────────────────────
+
+model PipelineHistory {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  fromStatus    String
+  toStatus      String
+
+  changedById   String?
+  changedBy     User?       @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  remarks       String?
+  changedAt     DateTime    @default(now())
+}
+
+// ── Activity Log ─────────────────────────────────────────────
+
+model ActivityLog {
+  id            String   @id @default(uuid())
+  action        String   /// e.g. "CANDIDATE_UPLOADED", "STATUS_CHANGED", "REQUIREMENT_CREATED"
+  entityType    String   /// e.g. "Application", "Requirement", "CandidateProfile"
+  entityId      String
+  details       Json?    /// Structured context
+
+  performedById String?
+  performedBy   User?    @relation(fields: [performedById], references: [id], onDelete: SetNull)
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  createdAt     DateTime @default(now())
+}

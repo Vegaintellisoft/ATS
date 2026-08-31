@@ -1,0 +1,46 @@
+{
+    "name": "bff",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "dev": "tsx watch src/server.ts",
+        "start": "node dist/server.js",
+        "migrate": "prisma migrate deploy",
+        "seed": "tsx prisma/seed.ts",
+        "setup": "prisma migrate deploy && tsx prisma/seed.ts",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "module",
+    "dependencies": {
+        "@prisma/client": "^6.19.0",
+        "axios": "^1.18.1",
+        "bcryptjs": "^2.4.3",
+        "cors": "^2.8.6",
+        "dotenv": "^17.4.2",
+        "express": "^5.2.1",
+        "form-data": "^4.0.6",
+        "jsonwebtoken": "^9.0.2",
+        "minio": "^8.0.7",
+        "multer": "^2.2.0",
+        "prisma": "^6.19.0",
+        "uuid": "^14.0.1"
+    },
+    "devDependencies": {
+        "@types/bcryptjs": "^2.4.6",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.6",
+        "@types/jsonwebtoken": "^9.0.9",
+        "@types/multer": "^2.2.0",
+        "@types/node": "^26.1.1",
+        "tsx": "^4.23.0",
+        "typescript": "^7.0.2"
+    },
+    "prisma": {
+        "seed": "tsx prisma/seed.ts"
+    }
+}
