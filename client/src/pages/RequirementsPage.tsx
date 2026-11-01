@@ -92,7 +92,7 @@ export function RequirementsPage({ onNavigateToDetail }: RequirementsPageProps) 
       <PageHeader
         icon="📋"
         title="Job Requirements"
-        description="Manage job orders and requirements for accounts."
+        description="Manage open requisitions, hiring criteria, and candidate matching."
       >
         <button className="search-btn" onClick={() => setShowForm(!showForm)}>
           {showForm ? "Cancel" : "Add Requirement"}

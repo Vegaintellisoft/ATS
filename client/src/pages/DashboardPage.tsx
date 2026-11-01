@@ -62,7 +62,7 @@ export function DashboardPage() {
       <PageHeader
         icon="📊"
         title="Dashboard"
-        description={isAdmin ? "Platform overview and statistics." : "Your candidate pipeline overview."}
+        description={isAdmin ? "Overview of active requisitions, pipeline stages, and hiring metrics." : "Overview of your assigned requisitions and candidate pipeline."}
       />
       <div className="page-body">
         {/* Key Metrics */}
@@ -87,7 +87,7 @@ export function DashboardPage() {
 
         {/* Pipeline Funnel */}
         <div style={{ marginBottom: "2rem", background: "var(--bg-card)", padding: "1.5rem", borderRadius: "8px", border: "1px solid var(--border)" }}>
-          <h3 style={{ marginBottom: "1.5rem" }}>Recruitment Funnel</h3>
+          <h3 style={{ marginBottom: "1.5rem" }}>Candidate Pipeline Stages</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxWidth: "600px", margin: "0 auto" }}>
             {[
               { label: "Candidates (New)", key: "NEW", count: summary?.funnelBreakdown?.NEW || 0 },

@@ -192,8 +192,8 @@ export function ListPage() {
           icon="👥"
           title={isAdmin ? "All Candidates" : "My Candidates"}
           description={isAdmin
-            ? "View all candidate profiles across all team managers."
-            : "Candidates you have uploaded and manage."
+            ? "Candidate profiles across all teams and managers."
+            : "Candidate profiles uploaded or managed by your account."
           }
         />
         <div className="page-body">

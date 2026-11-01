@@ -13,6 +13,13 @@ export class CandidateProfileRepository {
       where: { id: { in: candidateIds } }
     });
     
-    return new Map(profiles.map((p: any) => [p.id, p.profile]));
+    return new Map(profiles.map((p: any) => [
+      p.id,
+      {
+        ...(typeof p.profile === "object" ? p.profile : {}),
+        skills: p.profile?.skills || [],
+        totalExperienceYears: p.totalExperienceYears ?? p.profile?.computed?.totalExperienceYears ?? null,
+      }
+    ]));
   }
 }

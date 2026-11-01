@@ -93,7 +93,7 @@ export function UploadPage() {
       <PageHeader
         icon="📄"
         title="Upload Resumes"
-        description="Upload up to 10 candidate resumes at once to process through the AI pipeline"
+        description="Upload up to 10 candidate resumes (PDF) for automated parsing and indexing."
       />
       <div className="page-body">
         {!result && !error && (
@@ -110,7 +110,7 @@ export function UploadPage() {
             </div>
             <div className="upload-progress-label">
               <span className="spinner-inline" />
-              Processing resumes through AI pipeline…
+              Parsing resumes and updating candidate index…
             </div>
           </div>
         )}

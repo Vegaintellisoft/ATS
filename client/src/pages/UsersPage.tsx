@@ -161,7 +161,7 @@ export function UsersPage() {
       <PageHeader
         icon="👥"
         title="Users Directory"
-        description="View and manage corporate users, roles, and reporting hierarchies."
+        description="Manage user accounts, assigned roles, and reporting lines."
       >
         {canCreate && (
           <button

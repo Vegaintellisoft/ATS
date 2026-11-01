@@ -106,7 +106,7 @@ export function SearchPage() {
       <PageHeader
         icon="🔍"
         title="Search Candidates"
-        description="Find candidates by matching a job description or resume against indexed profiles"
+        description="Match candidate profiles against a job description or benchmark resume."
       />
       <div className="page-body">
         <SearchForm
@@ -152,10 +152,9 @@ export function SearchPage() {
         {hasSearched && candidates.length === 0 && !isSearching && (
           <div className="empty-state">
             <span className="empty-state-icon">🔭</span>
-            <h3>No candidates found</h3>
+            <h3>No matching candidates</h3>
             <p>
-              Try broadening your job description or uploading more resumes
-              to build the candidate index.
+              Adjust your experience filters, refine key skills in the description, or upload additional resumes.
             </p>
           </div>
         )}
@@ -164,10 +163,9 @@ export function SearchPage() {
         {!hasSearched && !isSearching && (
           <div className="empty-state">
             <span className="empty-state-icon">✨</span>
-            <h3>Semantic Candidate Search</h3>
+            <h3>Candidate Search</h3>
             <p>
-              Enter a job description or upload a resume above to find
-              semantically matching candidates from the indexed pool.
+              Paste a job description or upload a benchmark resume to find matching profiles.
             </p>
           </div>
         )}

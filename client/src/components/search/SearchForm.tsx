@@ -87,7 +87,7 @@ export function SearchForm({ onSearch, onResumeSearch, isSearching }: SearchForm
           <textarea
             id="search-jd-input"
             className="search-textarea"
-            placeholder={"Paste a job description here…\n\nExample: We are hiring a Flutter Developer to build and maintain cross-platform mobile applications using Flutter and Dart. The candidate should have experience with REST APIs, Firebase, state management, and Android application development."}
+            placeholder={"Paste a job description here…\n\nExample: Senior Full-Stack Engineer with 5+ years of experience in React, Node.js, and PostgreSQL. Experience with microservices, Docker, and AWS required."}
             value={jobDescription}
             onChange={(e) => setJobDescription(e.target.value)}
             aria-label="Job description"
@@ -146,7 +146,7 @@ export function SearchForm({ onSearch, onResumeSearch, isSearching }: SearchForm
                 Drop a resume PDF here or <span className="search-dropzone-link">browse</span>
               </p>
               <p className="search-dropzone-hint">
-                We'll find candidates with similar profiles
+                Matches candidates with similar skills and experience
               </p>
             </div>
           )}

@@ -63,7 +63,7 @@ export function TeamsPage() {
       <PageHeader
         icon="🛡️"
         title="Teams"
-        description="Manage teams and assign team managers."
+        description="Organize recruitment teams and manager assignments."
       />
       <div className="page-body">
       <div style={{ marginBottom: "2rem", display: "flex", justifyContent: "flex-end" }}>

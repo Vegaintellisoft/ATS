@@ -101,7 +101,7 @@ export function AccountsPage() {
       <PageHeader
         icon="🏢"
         title="Accounts (Clients)"
-        description="Manage client organizations and contacts."
+        description="Manage client accounts, points of contact, and open requisitions."
       >
         <button className="search-btn" onClick={() => setShowForm(!showForm)}>
           {showForm ? "Cancel" : "Add Account"}

@@ -62,7 +62,7 @@ export function OrganizationsPage() {
       <PageHeader
         icon="🏢"
         title="Organizations"
-        description="Manage all tenant organizations across the ATS platform."
+        description="Manage tenant organizations and workspace boundaries."
       />
       <div className="page-body">
       {hasPermission(user, "organization:create") && (

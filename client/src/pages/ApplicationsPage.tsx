@@ -365,7 +365,7 @@ export function ApplicationsPage() {
               <div className="empty-state">
                 <span className="empty-state-icon">👈</span>
                 <h3>Select a Requirement</h3>
-                <p>Pick a job requirement from the left to view and manage its candidate pipeline.</p>
+                <p>Select a job requirement on the left to review applicants and stage progression.</p>
               </div>
             ) : (
               <>
@@ -436,7 +436,7 @@ export function ApplicationsPage() {
                     <h3>No candidates in pipeline</h3>
                     <p>
                       {canCreate
-                        ? <>Click <strong>➕ Add Candidate</strong> above to add candidates to this requirement.</>
+                        ? <>Click <strong>➕ Add Candidate</strong> to assign candidate profiles to this requisition.</>
                         : "No candidates have been added to this requirement yet."}
                     </p>
                   </div>

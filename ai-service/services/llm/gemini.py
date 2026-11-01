@@ -9,6 +9,9 @@ from google.genai.errors import ClientError
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+
+
 class GeminiProvider:
     _keys = None
     _current_index = 0
@@ -71,17 +74,16 @@ class GeminiProvider:
     async def generate(self, prompt: str) -> str:
         for _ in range(len(GeminiProvider._keys)):
             key_info = self._get_next_client()
-            logger.info(f"Using Gemini API Key {key_info['index']} for generation")
+            logger.info(f"Using Gemini API Key {key_info['index']} for generation ({DEFAULT_MODEL})")
             try:
                 response = await key_info["client"].aio.models.generate_content(
-                    model="gemini-flash-latest",
+                    model=DEFAULT_MODEL,
                     contents=prompt,
                 )
                 return response.text
             except ClientError as exc:
                 self._handle_client_error(exc, key_info)
                 
-        # If we exhausted all keys during this single call loop
         soonest = min(GeminiProvider._keys, key=lambda x: x["available_at"])
         wait_time = max(1.0, soonest["available_at"] - time.time())
         raise RuntimeError(f"All Gemini API keys are currently exhausted. Please retry in {int(wait_time)} seconds.")
@@ -89,10 +91,10 @@ class GeminiProvider:
     async def generate_json(self, prompt: str) -> str:
         for _ in range(len(GeminiProvider._keys)):
             key_info = self._get_next_client()
-            logger.info(f"Using Gemini API Key {key_info['index']} for json generation")
+            logger.info(f"Using Gemini API Key {key_info['index']} for json generation ({DEFAULT_MODEL})")
             try:
                 response = await key_info["client"].aio.models.generate_content(
-                    model="gemini-flash-latest",
+                    model=DEFAULT_MODEL,
                     contents=prompt,
                     config={
                         "response_mime_type": "application/json",
@@ -100,7 +102,6 @@ class GeminiProvider:
                 )
                 
                 text = response.text.strip()
-                # Strip markdown fences if present
                 if text.startswith("```"):
                     text = text.split("\n", 1)[1] if "\n" in text else text[3:]
                     if text.endswith("```"):
@@ -110,7 +111,32 @@ class GeminiProvider:
             except ClientError as exc:
                 self._handle_client_error(exc, key_info)
 
-        # If we exhausted all keys during this single call loop
+        soonest = min(GeminiProvider._keys, key=lambda x: x["available_at"])
+        wait_time = max(1.0, soonest["available_at"] - time.time())
+        raise RuntimeError(f"All Gemini API keys are currently exhausted. Please retry in {int(wait_time)} seconds.")
+
+    async def generate_structured(self, prompt: str, schema):
+        """Generate structured outputs strictly validated against a Pydantic schema."""
+        for _ in range(len(GeminiProvider._keys)):
+            key_info = self._get_next_client()
+            logger.info(f"Using Gemini API Key {key_info['index']} for structured generation ({DEFAULT_MODEL})")
+            try:
+                response = await key_info["client"].aio.models.generate_content(
+                    model=DEFAULT_MODEL,
+                    contents=prompt,
+                    config={
+                        "response_mime_type": "application/json",
+                        "response_schema": schema,
+                    },
+                )
+                if hasattr(response, "parsed") and response.parsed:
+                    return response.parsed
+                import json
+                data = json.loads(response.text)
+                return schema(**data)
+            except ClientError as exc:
+                self._handle_client_error(exc, key_info)
+
         soonest = min(GeminiProvider._keys, key=lambda x: x["available_at"])
         wait_time = max(1.0, soonest["available_at"] - time.time())
         raise RuntimeError(f"All Gemini API keys are currently exhausted. Please retry in {int(wait_time)} seconds.")

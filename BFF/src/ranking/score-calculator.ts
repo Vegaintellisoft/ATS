@@ -18,7 +18,7 @@ export class ScoreCalculator {
     profile: any,
     query: SearchQuery
   ): CandidateRanking {
-    const candidateSkills = profile?.metadata?.skills || profile?.candidate?.skills || candidate.metadata?.skills || [];
+    const candidateSkills = profile?.skills || profile?.metadata?.skills || profile?.candidate?.skills || candidate.metadata?.skills || [];
     const allRequiredSkills = query.requiredSkills || [];
 
     // 1. Skill Score using Skill Matcher
@@ -42,7 +42,8 @@ export class ScoreCalculator {
 
     // 3. Experience score — compare required range against candidate's actual years
     let experienceScore = 0;
-    const candidateExpYears = profile?.computed?.totalExperienceYears 
+    const candidateExpYears = profile?.totalExperienceYears 
+      ?? profile?.computed?.totalExperienceYears 
       ?? candidate.metadata?.totalExperienceYears 
       ?? null;
 

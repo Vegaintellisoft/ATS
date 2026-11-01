@@ -129,7 +129,7 @@ export function RoleMasterPage() {
       <PageHeader
         icon="🔐"
         title="Role Master"
-        description="Manage roles and their granular permissions"
+        description="Configure system roles and permission sets."
       >
         <button
           className="search-btn"

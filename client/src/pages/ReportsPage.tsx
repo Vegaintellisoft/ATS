@@ -103,7 +103,7 @@ export function ReportsPage() {
       <PageHeader
         icon="📈"
         title="Business Reports"
-        description="View and analyze recruitment pipeline metrics."
+        description="Analyze requirement turnaround, recruiter throughput, and pipeline conversion."
       />
       
       <div className="page-body">
